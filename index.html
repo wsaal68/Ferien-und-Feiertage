@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ferien & Feiertage</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121935; --accent:#4b7bec; --accent-2:#39d98a; --text:#e6eaf6; --muted:#9aa4c5; --danger:#ff6b6b; --border:#263156;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(180deg,#0b1020,#0a1228 60%,#0b132e); color:var(--text);}    
+    .wrap{max-width:1100px; margin:48px auto; padding:0 20px}
+    header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px}
+    h1{font-size:clamp(22px,4vw,34px); margin:0}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    form{display:grid; grid-template-columns:1.2fr 0.8fr 1fr auto; gap:12px; align-items:end}
+    label{display:block; font-size:14px; color:var(--muted); margin:2px 0 6px}
+    select, button{width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:#0f1834; color:var(--text)}
+    select:focus, button:focus{outline:2px solid var(--accent); outline-offset:2px}
+    button{background:linear-gradient(180deg,var(--accent),#275adf); border:0; font-weight:700; cursor:pointer}
+    button[disabled]{opacity:.6; cursor:not-allowed}
+    .muted{color:var(--muted)}
+    .results{margin-top:18px}
+    table{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border-radius:14px;}
+    thead th{position:sticky; top:0; background:#0e1733; color:#c9d3f5; text-align:left; font-weight:700; padding:12px 14px; border-bottom:1px solid var(--border)}
+    tbody td{padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.06)}
+    tbody tr:hover{background:rgba(255,255,255,.03)}
+    .pill{display:inline-block; padding:.25rem .5rem; border-radius:999px; font-size:12px; background:rgba(75,123,236,.12); border:1px solid rgba(75,123,236,.4); color:#cfe0ff}
+    .toolbar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin:12px 0}
+    .toolbar .right{display:flex; gap:10px; align-items:center}
+    .outline{background:transparent; border:1px solid var(--border)}
+    .error{color:var(--danger)}
+    .type-badge{display:inline-block; padding:.2rem .5rem; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.18)}
+    .t-feiertag{background:rgba(249,115,22,.15)}
+    .t-ferien{background:rgba(59,130,246,.15)}
+
+    /* Print Styles */
+    @media print{
+      body{ background:#fff; color:#000; }
+      .wrap{ max-width:100%; margin:0; padding:0 10mm; }
+      header{ margin:0 0 8mm 0; }
+      .card{ box-shadow:none; border:none; padding:0; }
+      form, .toolbar .right button{ display:none !important; }
+      .toolbar{ margin:0 0 6mm 0; }
+      table{ border:1px solid #000; border-radius:0; }
+      thead th, tbody td{ color:#000; border-bottom:1px solid #000; }
+      thead th{ background:#f0f0f0 !important; -webkit-print-color-adjust:exact; print-color-adjust: exact; }
+      tbody tr:hover{ background:transparent; }
+      .muted{ color:#000; }
+      .type-badge{ border-color:#000; background:#eee; color:#000; }
+      @page{ size:auto; margin:12mm; }
+    }
+  </style>
+  <!-- SheetJS für .xlsx-Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Ferien & Feiertage <span class="pill">DE</span></h1>      
+    </header>
+
+    <section class="card">
+      <form id="query-form">
+        <div>
+          <label for="state">Bundesland</label>
+          <select id="state" name="state" required>
+            <option value="">Bitte wählen</option>
+          </select>
+        </div>
+        <div>
+          <label for="year">Jahr</label>
+          <select id="year" name="year" required></select>
+        </div>
+        <div>
+          <label for="mode">Datenart</label>
+          <select id="mode" name="mode">
+            <option value="both">Ferien & Feiertage</option>
+            <option value="school">Nur Schulferien</option>
+            <option value="public">Nur Feiertage</option>
+          </select>
+        </div>
+        <div>
+          <button id="submit" type="submit" disabled>Suchen</button>
+        </div>
+      </form>
+
+      <div class="toolbar">
+        <div id="status" class="muted">Bereit.</div>
+        <div class="right">
+          <button id="exportXlsx" class="outline" type="button" title="Tabelle als Excel (.xlsx) speichern">Excel (.xlsx) exportieren</button>
+          <button id="printTable" class="outline" type="button" title="Ergebnistabelle drucken">Drucken</button>
+          <button id="expandDays" class="outline" type="button" title="Zeige einzelne Ferientage statt Zeiträume">Tage auflisten</button>
+        </div>
+      </div>
+
+      <div class="results">
+        <table id="results-table" aria-live="polite">
+          <thead>
+            <tr>
+              <th>Typ</th>
+              <th>Bezeichnung</th>
+              <th>Start</th>
+              <th>Ende</th>
+              <th>Tage</th>
+            </tr>
+          </thead>
+          <tbody id="results-body">
+            <tr><td colspan="5" class="muted">Noch keine Daten. Wähle oben ein Bundesland & Jahr.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="muted" style="margin-top:14px">Quelle: <code>openholidaysapi.org</code> (öffentliche API, kein Schlüssel notwendig). Daten ohne Gewähr.</p>
+    <p class="pill" style="margin-top:14px">© 2025 Script by Wolfgang Saal </p>
+  </div>
+
+  <script>
+    const API_BASE = 'https://openholidaysapi.org';
+
+    // --- Helpers ---
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    // Parse 'YYYY-MM-DD' als LOKALES Datum (ohne UTC-Shift)
+    function parseLocalDate(iso){
+      if(!iso) return new Date(NaN);
+      const [y,m,d] = iso.split('-').map(n => parseInt(n,10));
+      return new Date(y, (m||1)-1, d||1);
+    }
+
+    function fmtDate(iso){
+      const d = parseLocalDate(iso);
+      return d.toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
+    }
+    function daysInclusive(startIso, endIso){
+      const a = parseLocalDate(startIso);
+      const b = parseLocalDate(endIso);
+      return Math.round((b - a) / 86400000) + 1;
+    }
+    function setStatus(msg, type='info'){
+      const status = $('#status');
+      status.textContent = msg;
+      status.classList.remove('error');
+      if(type==='error') status.classList.add('error');
+    }
+
+    // Dynamische Bundesländer (Subdivisions) laden
+    let STATES = [];
+    async function loadStates(){
+      try{
+        const res = await fetch(`${API_BASE}/Subdivisions?countryIsoCode=DE`, { headers: { 'Accept': 'text/json' } });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const subs = await res.json();
+        const bestName = (names)=>{
+          if(!Array.isArray(names)) return names || '—';
+          const de = names.find(n => (n.languageIsoCode||n.language) === 'DE');
+          const en = names.find(n => (n.languageIsoCode||n.language) === 'EN');
+          return (de?.text || de?.name || en?.text || en?.name || names[0]?.text || names[0]?.name || '—');
+        };
+        STATES = subs
+          .filter(s => /^DE-/.test(s.code))
+          .map(s => ({ code: s.code, name: bestName(s.name) }))
+          .sort((a,b)=> a.name.localeCompare(b.name,'de'));
+      }catch(e){
+        console.error('Subdivisions-Load failed, fallback to static list', e);
+        STATES = [
+          { code: 'DE-BW', name: 'Baden-Württemberg' },
+          { code: 'DE-BY', name: 'Bayern' },
+          { code: 'DE-BE', name: 'Berlin' },
+          { code: 'DE-BB', name: 'Brandenburg' },
+          { code: 'DE-HB', name: 'Bremen' },
+          { code: 'DE-HH', name: 'Hamburg' },
+          { code: 'DE-HE', name: 'Hessen' },
+          { code: 'DE-MV', name: 'Mecklenburg-Vorpommern' },
+          { code: 'DE-NI', name: 'Niedersachsen' },
+          { code: 'DE-NW', name: 'Nordrhein-Westfalen' },
+          { code: 'DE-RP', name: 'Rheinland-Pfalz' },
+          { code: 'DE-SL', name: 'Saarland' },
+          { code: 'DE-SN', name: 'Sachsen' },
+          { code: 'DE-ST', name: 'Sachsen-Anhalt' },
+          { code: 'DE-SH', name: 'Schleswig-Holstein' },
+          { code: 'DE-TH', name: 'Thüringen' }
+        ];
+      }
+    }
+
+    function fillStateSelect(){
+      const sel = $('#state');
+      sel.innerHTML = '';
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = 'Bitte wählen';
+      sel.appendChild(ph);
+      for(const s of STATES){
+        const opt = document.createElement('option');
+        opt.value = s.code; opt.textContent = s.name; sel.appendChild(opt);
+      }
+      sel.value = '';
+    }
+
+    // --- Verfügbare Jahre ermitteln und Select füllen ---
+    const yearsCache = new Map(); // key: `${state}|${mode}` -> {min,max}
+
+    async function getAvailableYearsFor(stateCode, mode){
+      const key = `${stateCode}|${mode}`;
+      if(yearsCache.has(key)) return yearsCache.get(key);
+
+      const endpoints = mode === 'school' ? ['SchoolHolidays']
+                        : mode === 'public' ? ['PublicHolidays']
+                        : ['SchoolHolidays','PublicHolidays'];
+
+      const ranges = await Promise.all(endpoints.map(async ep => {
+        const url = `${API_BASE}/${ep}?countryIsoCode=DE&subdivisionCode=${encodeURIComponent(stateCode)}&languageIsoCode=DE`;
+        const res = await fetch(url, { headers: { 'Accept': 'text/json' } });
+        if(!res.ok) return null;
+        const data = await res.json();
+        const years = [];
+        for(const item of (Array.isArray(data)?data:[])){
+          const startRaw = item.startDate || item.validFrom || item.date;
+          const endRaw   = item.endDate   || item.validTo   || item.date;
+          if(startRaw){ const y = parseLocalDate(String(startRaw)).getFullYear(); if(!isNaN(y)) years.push(y); }
+          if(endRaw){   const y = parseLocalDate(String(endRaw)).getFullYear();   if(!isNaN(y)) years.push(y); }
+        }
+        if(!years.length) return null;
+        return { min: Math.min(...years), max: Math.max(...years) };
+      }));
+
+      const filtered = ranges.filter(Boolean);
+      let min, max;
+      if(filtered.length){
+        min = Math.min(...filtered.map(r=>r.min));
+        max = Math.max(...filtered.map(r=>r.max));
+      } else {
+        const nowY = new Date().getFullYear();
+        min = nowY - 5; max = nowY + 5; // Fallback, falls API nichts liefert
+      }
+      const range = {min, max};
+      yearsCache.set(key, range);
+      return range;
+    }
+
+    function fillYearSelect(min, max){
+      const sel = $('#year');
+      sel.innerHTML = '';
+      for(let y=max; y>=min; y--){
+        const opt = document.createElement('option');
+        opt.value = String(y); opt.textContent = String(y);
+        sel.appendChild(opt);
+      }
+      const nowY = new Date().getFullYear();
+      sel.value = String(Math.min(Math.max(nowY, min), max));
+    }
+
+    function updateSubmitState(){
+      const hasState = !!$('#state').value;
+      $('#submit').disabled = !hasState;
+    }
+
+    function clampToYear(it, year){
+      const y = +year;
+      const start = parseLocalDate(it.start);
+      const end   = parseLocalDate(it.end);
+      const min = new Date(y,0,1);
+      const max = new Date(y,11,31);
+      const vs = start < min ? min : start;
+      const ve = end   > max ? max : end;
+      const toIsoLocal = (d) => {
+        const yy = d.getFullYear();
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const dd = String(d.getDate()).padStart(2,'0');
+        return `${yy}-${mm}-${dd}`;
+      };
+      return { ...it, start: toIsoLocal(vs), end: toIsoLocal(ve) };
+    }
+
+    // --- Daten laden ---
+    function nameFromArray(names){
+      const list = Array.isArray(names) ? names : (names ? [names] : []);
+      const de = list.find(n => (n.languageIsoCode||n.language) === 'DE');
+      const en = list.find(n => (n.languageIsoCode||n.language) === 'EN');
+      return (de?.text || de?.name || en?.text || en?.name || list[0]?.text || list[0]?.name || '—');
+    }
+
+    async function fetchSchoolHolidays(stateCode, year){
+      const params = new URLSearchParams({ countryIsoCode:'DE', subdivisionCode:stateCode, languageIsoCode:'DE', validFrom:`${year}-01-01`, validTo:`${year}-12-31` });
+      const res = await fetch(`${API_BASE}/SchoolHolidays?${params.toString()}`, { headers: { 'Accept': 'text/json' } });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return (Array.isArray(data)?data:[])
+        .map(it => ({ type:'Schulferien', name:nameFromArray(it.name||it.names||it.translations||[]), start:String(it.startDate||it.start||it.validFrom).slice(0,10), end:String(it.endDate||it.end||it.validTo).slice(0,10) }))
+        .filter(it => {const y=+year; const sY=parseLocalDate(it.start).getFullYear(); const eY=parseLocalDate(it.end).getFullYear(); return sY===y||eY===y||(sY<y&&eY>y);})
+        .map(it=>clampToYear(it,year));
+    }
+
+    async function fetchPublicHolidays(stateCode, year){
+      const params = new URLSearchParams({ countryIsoCode:'DE', subdivisionCode:stateCode, languageIsoCode:'DE', validFrom:`${year}-01-01`, validTo:`${year}-12-31` });
+      const res = await fetch(`${API_BASE}/PublicHolidays?${params.toString()}`, { headers: { 'Accept': 'text/json' } });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return (Array.isArray(data)?data:[])
+        .map(it => ({ type:'Feiertag', name:nameFromArray(it.name||it.names||it.translations||[]), start:String(it.startDate||it.validFrom||it.date).slice(0,10), end:String(it.endDate||it.validTo||it.date).slice(0,10) }))
+        .filter(it => {const y=+year; const sY=parseLocalDate(it.start).getFullYear(); const eY=parseLocalDate(it.end).getFullYear(); return sY===y||eY===y||(sY<y&&eY>y);})
+        .map(it=>clampToYear(it,year));
+    }
+
+    async function fetchCombined(stateCode, year, mode){
+      if(mode==='school') return fetchSchoolHolidays(stateCode, year);
+      if(mode==='public') return fetchPublicHolidays(stateCode, year);
+      const [a,b] = await Promise.all([fetchSchoolHolidays(stateCode, year), fetchPublicHolidays(stateCode, year)]);
+      return [...a, ...b].sort((x,y)=> (x.start+y.name).localeCompare(y.start+x.name));
+    }
+
+    function renderRows(items){
+      const tbody = $('#results-body');
+      tbody.innerHTML = '';
+      if(!items || items.length === 0){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="5" class="muted">Keine Einträge gefunden.</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+      items.sort((a,b)=> a.start.localeCompare(b.start) || a.name.localeCompare(b.name));
+      for(const it of items){
+        const tr = document.createElement('tr');
+        const days = daysInclusive(it.start, it.end);
+        const typeBadgeClass = it.type === 'Feiertag' ? 'type-badge t-feiertag' : 'type-badge t-ferien';
+        tr.innerHTML = `
+          <td><span class="${typeBadgeClass}">${it.type}</span></td>
+          <td>${it.name}</td>
+          <td>${fmtDate(it.start)}</td>
+          <td>${fmtDate(it.end)}</td>
+          <td>${days}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // --- Excel-Export (.xlsx mit echten Datumswerten) ---
+    function exportTableToXlsx(){
+      if(!state.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
+      const isExpanded = state.expanded;
+      const rows = [['Typ','Bezeichnung','Start','Ende','Tage']];
+      const datePairs = [];
+
+      if(isExpanded){
+        for(const it of state.lastQuery.items){
+          const s = parseLocalDate(it.start);
+          const e = parseLocalDate(it.end);
+          for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
+            const dd = new Date(d);
+            rows.push([it.type, it.name, dd, dd, 1]);
+            datePairs.push([dd, dd]);
+          }
+        }
+      } else {
+        for(const it of state.lastQuery.items){
+          const s = parseLocalDate(it.start);
+          const e = parseLocalDate(it.end);
+          rows.push([it.type, it.name, s, e, daysInclusive(it.start, it.end)]);
+          datePairs.push([s, e]);
+        }
+      }
+      if(rows.length<=1){ setStatus('Keine Daten zum Exportieren.'); return; }
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{wch:12},{wch:36},{wch:16},{wch:16},{wch:8}];
+
+      const toSerial = (d) => (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899,11,30)) / 86400000;
+      const ref = XLSX.utils.decode_range(ws['!ref']);
+      for(let r=1; r<=ref.e.r; r++){
+        const pair = datePairs[r-1];
+        if(pair){
+          const [sd, ed] = pair;
+          ws[XLSX.utils.encode_cell({r, c:2})] = { t:'n', v: toSerial(sd), z:'dd.mm.yyyy' };
+          ws[XLSX.utils.encode_cell({r, c:3})] = { t:'n', v: toSerial(ed), z:'dd.mm.yyyy' };
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, isExpanded ? 'Einzeltage' : 'Zeiträume');
+
+      const y = $('#year').value || 'YYYY';
+      const s = ($('#state option:checked')?.textContent || 'Bundesland').replace(/[\\/:*?"<>|]/g,'_');
+      const m = $('#mode').value || 'both';
+      const suffix = isExpanded ? '_tage' : '';
+      XLSX.writeFile(wb, `kalender_${m}_${s}_${y}${suffix}.xlsx`);
+    }
+
+    function expandToSingleDays(lastQuery){
+      if(!lastQuery || !lastQuery.items) return;
+      const days = [];
+      for(const it of lastQuery.items){
+        const start = parseLocalDate(it.start);
+        const end = parseLocalDate(it.end);
+        for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
+          days.push({ type: it.type, name: it.name, date: new Date(d) });
+        }
+      }
+      days.sort((a,b)=>a.date - b.date);
+
+      const tbody = $('#results-body');
+      tbody.innerHTML = '';
+      for(const day of days){
+        const tr = document.createElement('tr');
+        const typeBadgeClass = day.type === 'Feiertag' ? 'type-badge t-feiertag' : 'type-badge t-ferien';
+        tr.innerHTML = `
+          <td><span class="${typeBadgeClass}">${day.type}</span></td>
+          <td>${day.name}</td>
+          <td>${day.date.toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' })}</td>
+          <td>—</td>
+          <td>1</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // --- App State & Events ---
+    const state = { lastQuery: null, expanded: false };
+
+    async function refreshYears(){
+      const st = $('#state').value; const mode = $('#mode').value;
+      if(!st){
+        $('#year').innerHTML = '';
+        updateSubmitState();
+        setStatus('Bitte Bundesland wählen.');
+        return;
+      }
+      setStatus('Ermittle verfügbare Jahre…');
+      try{
+        const {min,max} = await getAvailableYearsFor(st, mode);
+        fillYearSelect(min, max);
+        setStatus('Bereit.');
+      }catch(e){
+        console.error(e);
+        setStatus('Konnte verfügbare Jahre nicht ermitteln – Standardwerte verwendet.', 'error');
+        const now = new Date().getFullYear(); fillYearSelect(now-5, now+5);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadStates();
+      fillStateSelect();
+      updateSubmitState();
+
+      $('#state').addEventListener('change', async ()=>{
+        updateSubmitState();
+        if($('#state').value){ await refreshYears(); } else { $('#year').innerHTML = ''; }
+      });
+
+      $('#mode').addEventListener('change', async ()=>{
+        if($('#state').value){ await refreshYears(); }
+      });
+
+      $('#query-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const stateCode = $('#state').value;
+        if(!stateCode){ setStatus('Bitte zuerst ein Bundesland wählen.'); return; }
+        const year = $('#year').value;
+        const mode = $('#mode').value;
+
+        setStatus('Lade Daten …');
+        $('#submit').disabled = true;
+
+        try{
+          const items = await fetchCombined(stateCode, year, mode);
+          state.lastQuery = { stateCode, year, items };
+          state.expanded = false;
+          renderRows(items);
+          const label = {both:'Ferien & Feiertage', school:'Schulferien', public:'Feiertage'}[mode];
+          setStatus(`Gefunden: ${items.length} Einträge (${label}) für ${$('#state option:checked').textContent} ${year}.`);
+        }catch(err){
+          console.error(err);
+          setStatus('Fehler beim Laden der Daten. Bitte später erneut versuchen.', 'error');
+          const tbody = $('#results-body');
+          tbody.innerHTML = `<tr><td colspan=\"5\" class=\"muted\">Fehler beim Abruf der API.</td></tr>`;
+        }finally{
+          updateSubmitState();
+        }
+      });
+
+      $('#exportXlsx').addEventListener('click', exportTableToXlsx);
+      $('#printTable').addEventListener('click', () => window.print());
+
+      $('#expandDays').addEventListener('click', () => {
+        if(!state.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
+        if(!state.expanded){
+          expandToSingleDays(state.lastQuery);
+          state.expanded = true;
+          $('#expandDays').textContent = 'Zeiträume anzeigen';
+          setStatus('Einzeltage werden angezeigt.');
+        } else {
+          renderRows(state.lastQuery.items);
+          state.expanded = false;
+          $('#expandDays').textContent = 'Tage auflisten';
+          setStatus('Zeiträume werden angezeigt.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
