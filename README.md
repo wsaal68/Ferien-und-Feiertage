@@ -33,4 +33,6 @@ MIT License – siehe [LICENSE](LICENSE).
 
 ---
 
-© 2025
+## Autor
+
+© 2025 Wolfgang Saal, Böllenborn
