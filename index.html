@@ -7,18 +7,32 @@
   <style>
     :root{
       --bg:#0b1020; --card:#121935; --accent:#4b7bec; --accent-2:#39d98a; --text:#e6eaf6; --muted:#9aa4c5; --danger:#ff6b6b; --border:#263156;
+      --action-h: 46px; /* Einheitliche Höhe für Toolbar-Buttons */
+      --overlap-bg: rgba(57,217,138,.12);
+      --overlap-bg-hover: rgba(57,217,138,.18);
+      --overlap-accent: #39d98a;
+      --state2-w: auto; /* wird per JS auf Breite von #state gesetzt */
     }
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(180deg,#0b1020,#0a1228 60%,#0b132e); color:var(--text);}    
     .wrap{max-width:1100px; margin:48px auto; padding:0 20px}
-    header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px}
-    h1{font-size:clamp(22px,4vw,34px); margin:0}
+    header{display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:20px}
+    header img{height:200px; width:auto; display:block}
+    header .slogan{text-align:right; font-size:clamp(20px,3.2vw,32px); font-weight:700; line-height:1.15}
     .card{background:var(--card); border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
     form{display:grid; grid-template-columns:1.2fr 0.8fr 1fr auto; gap:12px; align-items:end}
     label{display:block; font-size:14px; color:var(--muted); margin:2px 0 6px}
-    select, button{width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:#0f1834; color:var(--text)}
+    select, button, input[type="checkbox"]{padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:#0f1834; color:#e6eaf6}
+    select, button{width:100%}
     select:focus, button:focus{outline:2px solid var(--accent); outline-offset:2px}
     button{background:linear-gradient(180deg,var(--accent),#275adf); border:0; font-weight:700; cursor:pointer}
+    /* Logo-Blau explizit für den Suchen-Button */
+    #submit{
+      background: var(--accent) !important;
+      border: 0;
+      height: var(--action-h);
+    }
+    #submit:hover{ filter: brightness(1.08) saturate(1.05); }
     button[disabled]{opacity:.6; cursor:not-allowed}
     .muted{color:var(--muted)}
     .results{margin-top:18px}
@@ -27,51 +41,83 @@
     tbody td{padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.06)}
     tbody tr:hover{background:rgba(255,255,255,.03)}
     .pill{display:inline-block; padding:.25rem .5rem; border-radius:999px; font-size:12px; background:rgba(75,123,236,.12); border:1px solid rgba(75,123,236,.4); color:#cfe0ff}
+    .pill.state{margin-left:.35rem}
     .toolbar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin:12px 0}
-    .toolbar .right{display:flex; gap:10px; align-items:center}
+    /* Gleichbreite Aktionsbuttons: drei Spalten, gleiche Höhe */
+    .toolbar .right{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
+      gap:10px;
+      align-items:stretch;
+    }
+    .toolbar .right button{
+      height: var(--action-h);
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      white-space: nowrap;
+    }
+    @media (max-width:560px){
+      .toolbar .right{ grid-template-columns: 1fr; }
+    }
     .outline{background:transparent; border:1px solid var(--border)}
     .error{color:var(--danger)}
     .type-badge{display:inline-block; padding:.2rem .5rem; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.18)}
     .t-feiertag{background:rgba(249,115,22,.15)}
     .t-ferien{background:rgba(59,130,246,.15)}
 
-    /* Print Styles */
-    @media print{
-      body{ background:#fff; color:#000; }
-      .wrap{ max-width:100%; margin:0; padding:0 10mm; }
-      header{ margin:0 0 8mm 0; }
-      .card{ box-shadow:none; border:none; padding:0; }
-      form, .toolbar .right button{ display:none !important; }
-      .toolbar{ margin:0 0 6mm 0; }
-      table{ border:1px solid #000; border-radius:0; }
-      thead th, tbody td{ color:#000; border-bottom:1px solid #000; }
-      thead th{ background:#f0f0f0 !important; -webkit-print-color-adjust:exact; print-color-adjust: exact; }
-      tbody tr:hover{ background:transparent; }
-      .muted{ color:#000; }
-      .type-badge{ border-color:#000; background:#eee; color:#000; }
-      @page{ size:auto; margin:12mm; }
+    /* Vergleichszeile 2. Bundesland */
+    .compare{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:8px 0 4px}
+    .compare .checkwrap{display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px dashed var(--border); border-radius:10px}
+    .compare .state2-wrap{display:inline-block; width: var(--state2-w); max-width:100%}
+    .compare select{width:100%}
+
+    /* Generische Optik für fehlende Auswahl (beide Felder nutzbar) */
+    .select-wrap.need-select select{
+      border-color: var(--accent-2) !important;
+      box-shadow: 0 0 0 1px var(--accent-2) inset;
+    }
+    .select-hint{
+      display:none;
+      margin-top:6px;
+      font-size:12px;
+      color: var(--accent-2);
+    }
+
+    /* Overlap-Hervorhebung in Tabelle */
+    tbody tr.overlap{
+      background: var(--overlap-bg);
+      box-shadow: inset 3px 0 0 0 var(--overlap-accent);
+    }
+    tbody tr.overlap:hover{
+      background: var(--overlap-bg-hover);
     }
   </style>
-  <!-- SheetJS für .xlsx-Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Ferien & Feiertage <span class="pill">DE</span></h1>      
+      <img id="appLogo" src="logo_Ferien_Feiertage.png" alt="Logo Ferien & Feiertage">
+      <div class="slogan">Die schönste Zeit im Jahr</div>
     </header>
 
     <section class="card">
       <form id="query-form">
-        <div>
+        <div id="state1Wrap" class="select-wrap">
           <label for="state">Bundesland</label>
-          <select id="state" name="state" required>
-            <option value="">Bitte wählen</option>
+          <select id="state" name="state">
+            <option value="">Bundesland wählen</option>
           </select>
+          <div id="state1Hint" class="select-hint">Bitte ein Bundesland auswählen.</div>
         </div>
         <div>
           <label for="year">Jahr</label>
-          <select id="year" name="year" required></select>
+          <select id="year" name="year"></select>
         </div>
         <div>
           <label for="mode">Datenart</label>
@@ -82,16 +128,31 @@
           </select>
         </div>
         <div>
-          <button id="submit" type="submit" disabled>Suchen</button>
+          <button id="submit" type="submit">Suchen</button>
         </div>
       </form>
+
+      <!-- Vergleichszeile für zweites Bundesland -->
+      <div class="compare">
+        <div class="checkwrap">
+          <input type="checkbox" id="compareToggle" />
+          <label for="compareToggle" style="margin:0; color:var(--muted);">zweites Bundesland vergleichen</label>
+        </div>
+        <div class="state2-wrap select-wrap" id="state2Wrap">
+          <!-- leere Option als sichtbarer leerer Zustand -->
+          <select id="state2" disabled>
+            <option value=""></option>
+          </select>
+          <div id="state2Hint" class="select-hint">Bitte ein zweites Bundesland auswählen.</div>
+        </div>
+      </div>
 
       <div class="toolbar">
         <div id="status" class="muted">Bereit.</div>
         <div class="right">
-          <button id="exportXlsx" class="outline" type="button" title="Tabelle als Excel (.xlsx) speichern">Excel (.xlsx) exportieren</button>
-          <button id="printTable" class="outline" type="button" title="Ergebnistabelle drucken">Drucken</button>
-          <button id="expandDays" class="outline" type="button" title="Zeige einzelne Ferientage statt Zeiträume">Tage auflisten</button>
+          <button id="exportXlsx" class="outline" type="button" title="Tabelle als Excel (.xlsx) speichern" disabled>Excel erstellen</button>
+          <button id="showPdf" class="outline" type="button" title="PDF erzeugen & anzeigen" disabled>PDF erstellen</button>
+          <button id="expandDays" class="outline" type="button" title="Zeige einzelne Ferientage statt Zeiträume" disabled>Tage auflisten</button>
         </div>
       </div>
 
@@ -113,392 +174,683 @@
       </div>
     </section>
 
-    <p class="muted" style="margin-top:14px">Quelle: <code>openholidaysapi.org</code> (öffentliche API, kein Schlüssel notwendig). Daten ohne Gewähr.</p>
-    <p class="pill" style="margin-top:14px">© 2025 Script by Wolfgang Saal </p>
+    <p class="muted" style="margin-top:14px">Quelle: <code><a href="https://www.openholidaysapi.org/de/" target="_blank" rel="noopener">openholidaysapi.org</a></code>. Daten ohne Gewähr.</p>
+    <p class="pill" style="margin-top:14px">© 2025 · Wolfgang Saal, Böllenborn · MIT-Lizenz. Download: <a href="https://github.com/wsaal68/" target="_blank" rel="noopener">github.com/wsaal68/</a>.</p>
   </div>
 
   <script>
     const API_BASE = 'https://openholidaysapi.org';
 
+    // --- App State ---
+    const appState = { lastQuery: null, expanded: false };
+
     // --- Helpers ---
     const $ = (sel, root=document) => root.querySelector(sel);
     const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    function parseLocalDate(iso){ if(!iso) return new Date(NaN); const [y,m,d]=iso.split('-').map(n=>parseInt(n,10)); return new Date(y,(m||1)-1,d||1); }
+    const fmtDate = (iso)=> parseLocalDate(iso).toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+    const daysInclusive = (a,b)=> Math.round((parseLocalDate(b)-parseLocalDate(a))/86400000)+1;
+    function setStatus(msg,type='info'){ const el=$('#status'); el.textContent=msg; el.classList.toggle('error', type==='error'); }
+    const shortOf = (code) => (code||'').split('-')[1]||'';
 
-    // Parse 'YYYY-MM-DD' als LOKALES Datum (ohne UTC-Shift)
-    function parseLocalDate(iso){
-      if(!iso) return new Date(NaN);
-      const [y,m,d] = iso.split('-').map(n => parseInt(n,10));
-      return new Date(y, (m||1)-1, d||1);
+    function updateActionButtons(){
+      const hasOutput = !!(appState.lastQuery && Array.isArray(appState.lastQuery.items) && appState.lastQuery.items.length);
+      $('#exportXlsx').disabled = !hasOutput;
+      $('#showPdf').disabled   = !hasOutput;
+      $('#expandDays').disabled= !hasOutput;
+    }
+    function clearOutput(msg='Ausgabe zurückgesetzt.'){
+      const tbody = $('#results-body');
+      tbody.innerHTML = '<tr><td colspan="5" class="muted">Keine Einträge – bitte neu suchen.</td></tr>';
+      appState.lastQuery = null;
+      appState.expanded = false;
+      const expBtn = $('#expandDays');
+      if(expBtn) expBtn.textContent = 'Tage auflisten';
+      updateActionButtons();
+      setStatus(msg);
     }
 
-    function fmtDate(iso){
+    function syncState2Width(){
+      const st = $('#state');
+      const w = st ? Math.round(st.getBoundingClientRect().width) : 300;
+      document.documentElement.style.setProperty('--state2-w', w+'px');
+    }
+    window.addEventListener('resize', syncState2Width);
+
+    function setSelectNeed(wrapId, hintId, need, showHint){
+      const wrap = $('#'+wrapId), hint = $('#'+hintId);
+      if(!wrap || !hint) return;
+      if(need){
+        wrap.classList.add('need-select');
+        hint.style.display = showHint ? 'block' : 'none';
+      }else{
+        wrap.classList.remove('need-select');
+        hint.style.display = 'none';
+      }
+    }
+    function updateState1UI({submitTriggered=false} = {}){
+      const missing = !$('#state').value;
+      setSelectNeed('state1Wrap','state1Hint', missing, submitTriggered && missing);
+    }
+    function updateState2UI({submitTriggered=false} = {}){
+      const on = $('#compareToggle').checked;
+      const sel2 = $('#state2');
+      if(!on){
+        setSelectNeed('state2Wrap','state2Hint', false, false);
+        sel2.disabled = true;
+        sel2.value = '';
+        return;
+      }
+      sel2.disabled = false;
+      const missing = !sel2.value;
+      setSelectNeed('state2Wrap','state2Hint', missing, submitTriggered && missing);
+    }
+
+    async function fetchJson(url){
+      let res;
+      try{ res = await fetch(url, { headers: { 'Accept': 'text/json' } }); }
+      catch(e){ throw new Error('Netzwerkfehler: '+ (e?.message || e)); }
+      if(!res.ok){
+        const text = await res.text().catch(()=> '');
+        throw new Error(`HTTP ${res.status} beim Abruf ${url}\n${text.slice(0,200)}`);
+      }
+      try{ return await res.json(); }
+      catch(e){ throw new Error('Ungültige JSON-Antwort von '+url); }
+    }
+
+    const COLORS = {
+      blue: [75, 123, 236], green: [57, 217, 138], headBlue: [64, 108, 224], headText: [255, 255, 255],
+      headerBg: [240, 248, 255], zebra: [246, 250, 255], overlap: [222, 247, 236]
+    };
+
+    function dayNumISO(iso){
       const d = parseLocalDate(iso);
-      return d.toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
+      return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
     }
-    function daysInclusive(startIso, endIso){
-      const a = parseLocalDate(startIso);
-      const b = parseLocalDate(endIso);
-      return Math.round((b - a) / 86400000) + 1;
+    function isoFromDayNum(n){
+      const d = new Date(n * 86400000);
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth()+1).padStart(2,'0');
+      const dd = String(d.getUTCDate()).padStart(2,'0');
+      return `${y}-${m}-${dd}`;
     }
-    function setStatus(msg, type='info'){
-      const status = $('#status');
-      status.textContent = msg;
-      status.classList.remove('error');
-      if(type==='error') status.classList.add('error');
+    function buildCutPoints(itemsA, itemsB){
+      const cuts = new Set();
+      const pushCuts = (arr)=>{
+        for(const it of arr){
+          const a = dayNumISO(it.start);
+          const b = dayNumISO(it.end) + 1; // end-exklusiv
+          cuts.add(a); cuts.add(b);
+        }
+      };
+      pushCuts(itemsA); pushCuts(itemsB);
+      return Array.from(cuts).sort((x,y)=>x-y);
+    }
+    function segmentize(items, cuts){
+      const segs = [];
+      for(let i=0;i<cuts.length-1;i++){
+        const a = cuts[i], b = cuts[i+1]; // [a,b)
+        const startIso = isoFromDayNum(a);
+        const endIso   = isoFromDayNum(b-1); // inklusiv
+        for(const it of items){
+          const s = dayNumISO(it.start), e = dayNumISO(it.end);
+          if(s <= a && e >= (b-1)){
+            segs.push({ ...it, start:startIso, end:endIso, _a:a, _b:b });
+          }
+        }
+      }
+      return segs;
+    }
+    function splitMarkAndMerge(itemsA, itemsB, s1Short, s2Short){
+      const cuts = buildCutPoints(itemsA, itemsB);
+      const segA = segmentize(itemsA, cuts);
+      const segB = segmentize(itemsB, cuts);
+      const mapA = new Map(segA.map(s=>[`${s._a}|${s._b}`, s]));
+      const mapB = new Map(segB.map(s=>[`${s._a}|${s._b}`, s]));
+      const allKeys = new Set([...mapA.keys(), ...mapB.keys()]);
+      const out = [];
+      let overlapCount = 0;
+
+      for(const key of allKeys){
+        const A = mapA.get(key), B = mapB.get(key);
+        const [ka,kb] = key.split('|').map(n=>parseInt(n,10));
+        const startIso = isoFromDayNum(ka);
+        const endIso = isoFromDayNum(kb-1);
+
+        if(A && B){
+          overlapCount++;
+          const sameType = A.type === B.type;
+          const type = sameType ? A.type : `${A.type} & ${B.type}`;
+          const names = Array.from(new Set([A.name, B.name].filter(Boolean)));
+          const name = names.length===1 ? names[0] : names.join(' / ');
+          out.push({ type, name, start:startIso, end:endIso, overlap:true, origin:'AB', states:[s1Short, s2Short], stateShort:`${s1Short}+${s2Short}` });
+        }else if(A){
+          out.push({ ...A, overlap:false, states:[s1Short] });
+        }else if(B){
+          out.push({ ...B, overlap:false, states:[s2Short] });
+        }
+      }
+      out.forEach(o=>{ delete o._a; delete o._b; });
+      out.sort((x,y)=> x.start.localeCompare(y.start) || x.name.localeCompare(y.name));
+      return { merged: out, overlapCount };
     }
 
-    // Dynamische Bundesländer (Subdivisions) laden
     let STATES = [];
     async function loadStates(){
       try{
-        const res = await fetch(`${API_BASE}/Subdivisions?countryIsoCode=DE`, { headers: { 'Accept': 'text/json' } });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const subs = await res.json();
+        const subs = await fetchJson(`${API_BASE}/Subdivisions?countryIsoCode=DE`);
         const bestName = (names)=>{
           if(!Array.isArray(names)) return names || '—';
           const de = names.find(n => (n.languageIsoCode||n.language) === 'DE');
           const en = names.find(n => (n.languageIsoCode||n.language) === 'EN');
           return (de?.text || de?.name || en?.text || en?.name || names[0]?.text || names[0]?.name || '—');
         };
-        STATES = subs
-          .filter(s => /^DE-/.test(s.code))
-          .map(s => ({ code: s.code, name: bestName(s.name) }))
-          .sort((a,b)=> a.name.localeCompare(b.name,'de'));
+        STATES = subs.filter(s=>/^DE-/.test(s.code))
+                     .map(s=>({code:s.code, name:bestName(s.name||s.names)}))
+                     .sort((a,b)=>a.name.localeCompare(b.name,'de'));
       }catch(e){
-        console.error('Subdivisions-Load failed, fallback to static list', e);
+        console.warn('Subdivisions-Load failed, fallback to static list', e);
         STATES = [
-          { code: 'DE-BW', name: 'Baden-Württemberg' },
-          { code: 'DE-BY', name: 'Bayern' },
-          { code: 'DE-BE', name: 'Berlin' },
-          { code: 'DE-BB', name: 'Brandenburg' },
-          { code: 'DE-HB', name: 'Bremen' },
-          { code: 'DE-HH', name: 'Hamburg' },
-          { code: 'DE-HE', name: 'Hessen' },
-          { code: 'DE-MV', name: 'Mecklenburg-Vorpommern' },
-          { code: 'DE-NI', name: 'Niedersachsen' },
-          { code: 'DE-NW', name: 'Nordrhein-Westfalen' },
-          { code: 'DE-RP', name: 'Rheinland-Pfalz' },
-          { code: 'DE-SL', name: 'Saarland' },
-          { code: 'DE-SN', name: 'Sachsen' },
-          { code: 'DE-ST', name: 'Sachsen-Anhalt' },
-          { code: 'DE-SH', name: 'Schleswig-Holstein' },
-          { code: 'DE-TH', name: 'Thüringen' }
+          { code: 'DE-BW', name: 'Baden-Württemberg' }, { code: 'DE-BY', name: 'Bayern' },
+          { code: 'DE-BE', name: 'Berlin' }, { code: 'DE-BB', name: 'Brandenburg' },
+          { code: 'DE-HB', name: 'Bremen' }, { code: 'DE-HH', name: 'Hamburg' },
+          { code: 'DE-HE', name: 'Hessen' }, { code: 'DE-MV', name: 'Mecklenburg-Vorpommern' },
+          { code: 'DE-NI', name: 'Niedersachsen' }, { code: 'DE-NW', name: 'Nordrhein-Westfalen' },
+          { code: 'DE-RP', name: 'Rheinland-Pfalz' }, { code: 'DE-SL', name: 'Saarland' },
+          { code: 'DE-SN', name: 'Sachsen' }, { code: 'DE-ST', name: 'Sachsen-Anhalt' },
+          { code: 'DE-SH', name: 'Schleswig-Holstein' }, { code: 'DE-TH', name: 'Thüringen' }
         ];
       }
     }
 
-    function fillStateSelect(){
-      const sel = $('#state');
-      sel.innerHTML = '';
-      const ph = document.createElement('option');
-      ph.value = '';
-      ph.textContent = 'Bitte wählen';
-      sel.appendChild(ph);
-      for(const s of STATES){
-        const opt = document.createElement('option');
-        opt.value = s.code; opt.textContent = s.name; sel.appendChild(opt);
-      }
-      sel.value = '';
-    }
-
-    // --- Verfügbare Jahre ermitteln und Select füllen ---
-    const yearsCache = new Map(); // key: `${state}|${mode}` -> {min,max}
-
+    const yearsCache = new Map();
     async function getAvailableYearsFor(stateCode, mode){
+      if(!stateCode) return null;
       const key = `${stateCode}|${mode}`;
       if(yearsCache.has(key)) return yearsCache.get(key);
 
-      const endpoints = mode === 'school' ? ['SchoolHolidays']
-                        : mode === 'public' ? ['PublicHolidays']
-                        : ['SchoolHolidays','PublicHolidays'];
+      const endpoints = mode==='school' ? ['SchoolHolidays']
+                    : mode==='public' ? ['PublicHolidays']
+                    : ['SchoolHolidays','PublicHolidays'];
 
       const ranges = await Promise.all(endpoints.map(async ep => {
-        const url = `${API_BASE}/${ep}?countryIsoCode=DE&subdivisionCode=${encodeURIComponent(stateCode)}&languageIsoCode=DE`;
-        const res = await fetch(url, { headers: { 'Accept': 'text/json' } });
-        if(!res.ok) return null;
-        const data = await res.json();
-        const years = [];
-        for(const item of (Array.isArray(data)?data:[])){
-          const startRaw = item.startDate || item.validFrom || item.date;
-          const endRaw   = item.endDate   || item.validTo   || item.date;
-          if(startRaw){ const y = parseLocalDate(String(startRaw)).getFullYear(); if(!isNaN(y)) years.push(y); }
-          if(endRaw){   const y = parseLocalDate(String(endRaw)).getFullYear();   if(!isNaN(y)) years.push(y); }
+        try{
+          const data = await fetchJson(`${API_BASE}/${ep}?countryIsoCode=DE&subdivisionCode=${encodeURIComponent(stateCode)}&languageIsoCode=DE`);
+          const years = [];
+          for(const item of (Array.isArray(data)?data:[])){
+            const a = item.startDate||item.validFrom||item.date;
+            const b = item.endDate  ||item.validTo  ||item.date;
+            if(a){ const y=parseLocalDate(String(a)).getFullYear(); if(!isNaN(y)) years.push(y); }
+            if(b){ const y=parseLocalDate(String(b)).getFullYear(); if(!isNaN(y)) years.push(y); }
+          }
+          if(!years.length) return null;
+          return {min:Math.min(...years), max:Math.max(...years)};
+        }catch(e){
+          console.warn('Year range fetch failed for', ep, e);
+          return null;
         }
-        if(!years.length) return null;
-        return { min: Math.min(...years), max: Math.max(...years) };
       }));
-
-      const filtered = ranges.filter(Boolean);
-      let min, max;
-      if(filtered.length){
-        min = Math.min(...filtered.map(r=>r.min));
-        max = Math.max(...filtered.map(r=>r.max));
-      } else {
+      const valid = ranges.filter(Boolean);
+      let range;
+      if(valid.length){
+        range = { min: Math.min(...valid.map(r=>r.min)), max: Math.max(...valid.map(r=>r.max)) };
+      }else{
         const nowY = new Date().getFullYear();
-        min = nowY - 5; max = nowY + 5; // Fallback, falls API nichts liefert
+        range = { min: nowY-5, max: nowY+5 };
       }
-      const range = {min, max};
       yearsCache.set(key, range);
       return range;
     }
-
     function fillYearSelect(min, max){
-      const sel = $('#year');
-      sel.innerHTML = '';
-      for(let y=max; y>=min; y--){
-        const opt = document.createElement('option');
-        opt.value = String(y); opt.textContent = String(y);
-        sel.appendChild(opt);
-      }
+      const sel = $('#year'); sel.innerHTML='';
+      for(let y=max; y>=min; y--){ sel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`); }
       const nowY = new Date().getFullYear();
       sel.value = String(Math.min(Math.max(nowY, min), max));
     }
-
-    function updateSubmitState(){
-      const hasState = !!$('#state').value;
-      $('#submit').disabled = !hasState;
-    }
-
     function clampToYear(it, year){
-      const y = +year;
-      const start = parseLocalDate(it.start);
-      const end   = parseLocalDate(it.end);
-      const min = new Date(y,0,1);
-      const max = new Date(y,11,31);
-      const vs = start < min ? min : start;
-      const ve = end   > max ? max : end;
-      const toIsoLocal = (d) => {
-        const yy = d.getFullYear();
-        const mm = String(d.getMonth()+1).padStart(2,'0');
-        const dd = String(d.getDate()).padStart(2,'0');
-        return `${yy}-${mm}-${dd}`;
-      };
-      return { ...it, start: toIsoLocal(vs), end: toIsoLocal(ve) };
+      const y=+year, start=parseLocalDate(it.start), end=parseLocalDate(it.end);
+      const min=new Date(y,0,1), max=new Date(y,11,31);
+      const vs = start<min ? min : start, ve = end>max ? max : end;
+      const toIso = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return {...it, start:toIso(vs), end:toIso(ve)};
     }
-
-    // --- Daten laden ---
     function nameFromArray(names){
-      const list = Array.isArray(names) ? names : (names ? [names] : []);
-      const de = list.find(n => (n.languageIsoCode||n.language) === 'DE');
-      const en = list.find(n => (n.languageIsoCode||n.language) === 'EN');
-      return (de?.text || de?.name || en?.text || en?.name || list[0]?.text || list[0]?.name || '—');
+      const list = Array.isArray(names)?names:(names?[names]:[]);
+      const de = list.find(n=>(n.languageIsoCode||n.language)==='DE');
+      const en = list.find(n=>(n.languageIsoCode||n.language)==='EN');
+      return (de?.text||de?.name||en?.text||en?.name||list[0]?.text||list[0]?.name||'—');
     }
 
     async function fetchSchoolHolidays(stateCode, year){
-      const params = new URLSearchParams({ countryIsoCode:'DE', subdivisionCode:stateCode, languageIsoCode:'DE', validFrom:`${year}-01-01`, validTo:`${year}-12-31` });
-      const res = await fetch(`${API_BASE}/SchoolHolidays?${params.toString()}`, { headers: { 'Accept': 'text/json' } });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const url = `${API_BASE}/SchoolHolidays?countryIsoCode=DE&subdivisionCode=${encodeURIComponent(stateCode)}&languageIsoCode=DE&validFrom=${year}-01-01&validTo=${year}-12-31`;
+      const data = await fetchJson(url);
       return (Array.isArray(data)?data:[])
-        .map(it => ({ type:'Schulferien', name:nameFromArray(it.name||it.names||it.translations||[]), start:String(it.startDate||it.start||it.validFrom).slice(0,10), end:String(it.endDate||it.end||it.validTo).slice(0,10) }))
-        .filter(it => {const y=+year; const sY=parseLocalDate(it.start).getFullYear(); const eY=parseLocalDate(it.end).getFullYear(); return sY===y||eY===y||(sY<y&&eY>y);})
+        .map(it=>({ type:'Schulferien', name:nameFromArray(it.name||it.names||it.translations||[]), start:String(it.startDate||it.start||it.validFrom).slice(0,10), end:String(it.endDate||it.end||it.validTo).slice(0,10) }))
+        .filter(it=>{ const y=+year, sy=parseLocalDate(it.start).getFullYear(), ey=parseLocalDate(it.end).getFullYear(); return sy===y||ey===y||(sy<y&&ey>y); })
         .map(it=>clampToYear(it,year));
     }
-
     async function fetchPublicHolidays(stateCode, year){
-      const params = new URLSearchParams({ countryIsoCode:'DE', subdivisionCode:stateCode, languageIsoCode:'DE', validFrom:`${year}-01-01`, validTo:`${year}-12-31` });
-      const res = await fetch(`${API_BASE}/PublicHolidays?${params.toString()}`, { headers: { 'Accept': 'text/json' } });
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const url = `${API_BASE}/PublicHolidays?countryIsoCode=DE&subdivisionCode=${encodeURIComponent(stateCode)}&languageIsoCode=DE&validFrom=${year}-01-01&validTo=${year}-12-31`;
+      const data = await fetchJson(url);
       return (Array.isArray(data)?data:[])
-        .map(it => ({ type:'Feiertag', name:nameFromArray(it.name||it.names||it.translations||[]), start:String(it.startDate||it.validFrom||it.date).slice(0,10), end:String(it.endDate||it.validTo||it.date).slice(0,10) }))
-        .filter(it => {const y=+year; const sY=parseLocalDate(it.start).getFullYear(); const eY=parseLocalDate(it.end).getFullYear(); return sY===y||eY===y||(sY<y&&eY>y);})
+        .map(it=>({ type:'Feiertag', name:nameFromArray(it.name||it.names||it.translations||[]), start:String(it.startDate||it.validFrom||it.date).slice(0,10), end:String(it.endDate||it.validTo||it.date).slice(0,10) }))
+        .filter(it=>{ const y=+year, sy=parseLocalDate(it.start).getFullYear(), ey=parseLocalDate(it.end).getFullYear(); return sy===y||ey===y||(sy<y&&ey>y); })
         .map(it=>clampToYear(it,year));
     }
-
     async function fetchCombined(stateCode, year, mode){
       if(mode==='school') return fetchSchoolHolidays(stateCode, year);
       if(mode==='public') return fetchPublicHolidays(stateCode, year);
       const [a,b] = await Promise.all([fetchSchoolHolidays(stateCode, year), fetchPublicHolidays(stateCode, year)]);
-      return [...a, ...b].sort((x,y)=> (x.start+y.name).localeCompare(y.start+x.name));
+      return [...a,...b].sort((x,y)=>x.start.localeCompare(y.start)||x.name.localeCompare(y.name));
     }
 
     function renderRows(items){
-      const tbody = $('#results-body');
-      tbody.innerHTML = '';
-      if(!items || items.length === 0){
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="5" class="muted">Keine Einträge gefunden.</td>`;
-        tbody.appendChild(tr);
+      const tbody = $('#results-body'); tbody.innerHTML='';
+      if(!items || !items.length){
+        tbody.innerHTML = '<tr><td colspan="5" class="muted">Keine Einträge gefunden.</td></tr>';
+        updateActionButtons();
         return;
       }
       items.sort((a,b)=> a.start.localeCompare(b.start) || a.name.localeCompare(b.name));
       for(const it of items){
-        const tr = document.createElement('tr');
         const days = daysInclusive(it.start, it.end);
-        const typeBadgeClass = it.type === 'Feiertag' ? 'type-badge t-feiertag' : 'type-badge t-ferien';
+        const badgeClass = it.type==='Feiertag' ? 'type-badge t-feiertag' : 'type-badge t-ferien';
+        let stateBadges = '';
+        if(Array.isArray(it.states) && it.states.length){
+          stateBadges = it.states.map(s=>`<span class="pill state">${s}</span>`).join('');
+        } else if (it.stateShort){
+          stateBadges = `<span class="pill state">${it.stateShort}</span>`;
+        }
+        const tr = document.createElement('tr');
+        if(it.overlap) tr.classList.add('overlap');
         tr.innerHTML = `
-          <td><span class="${typeBadgeClass}">${it.type}</span></td>
-          <td>${it.name}</td>
+          <td><span class="${badgeClass}">${it.type}</span></td>
+          <td>${it.name} ${stateBadges}</td>
           <td>${fmtDate(it.start)}</td>
           <td>${fmtDate(it.end)}</td>
-          <td>${days}</td>
+          <td style="text-align:right">${days}</td>
         `;
         tbody.appendChild(tr);
       }
+      updateActionButtons();
     }
 
-    // --- Excel-Export (.xlsx mit echten Datumswerten) ---
     function exportTableToXlsx(){
-      if(!state.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
-      const isExpanded = state.expanded;
+      if(!appState.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
+      const isExpanded = appState.expanded;
       const rows = [['Typ','Bezeichnung','Start','Ende','Tage']];
       const datePairs = [];
 
       if(isExpanded){
-        for(const it of state.lastQuery.items){
-          const s = parseLocalDate(it.start);
-          const e = parseLocalDate(it.end);
+        for(const it of appState.lastQuery.items){
+          const s = parseLocalDate(it.start), e = parseLocalDate(it.end);
           for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
             const dd = new Date(d);
-            rows.push([it.type, it.name, dd, dd, 1]);
+            const lbl = Array.isArray(it.states)&&it.states.length ? ` (${it.states.join(' & ')})` : (it.stateShort?` (${it.stateShort})`:``);
+            rows.push([it.type, `${it.name}${lbl}`, dd, dd, 1]);
             datePairs.push([dd, dd]);
           }
         }
       } else {
-        for(const it of state.lastQuery.items){
-          const s = parseLocalDate(it.start);
-          const e = parseLocalDate(it.end);
-          rows.push([it.type, it.name, s, e, daysInclusive(it.start, it.end)]);
+        for(const it of appState.lastQuery.items){
+          const s = parseLocalDate(it.start), e = parseLocalDate(it.end);
+          const lbl = Array.isArray(it.states)&&it.states.length ? ` (${it.states.join(' & ')})` : (it.stateShort?` (${it.stateShort})`:``);
+          rows.push([it.type, `${it.name}${lbl}`, s, e, daysInclusive(it.start, it.end)]);
           datePairs.push([s, e]);
         }
       }
       if(rows.length<=1){ setStatus('Keine Daten zum Exportieren.'); return; }
 
       const ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [{wch:12},{wch:36},{wch:16},{wch:16},{wch:8}];
+      ws['!cols'] = [{wch:12},{wch:42},{wch:16},{wch:16},{wch:8}];
 
-      const toSerial = (d) => (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(1899,11,30)) / 86400000;
+      const toSerial = (d)=> (Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()) - Date.UTC(1899,11,30))/86400000;
       const ref = XLSX.utils.decode_range(ws['!ref']);
       for(let r=1; r<=ref.e.r; r++){
-        const pair = datePairs[r-1];
-        if(pair){
+        const pair = datePairs[r-1]; if(pair){
           const [sd, ed] = pair;
           ws[XLSX.utils.encode_cell({r, c:2})] = { t:'n', v: toSerial(sd), z:'dd.mm.yyyy' };
           ws[XLSX.utils.encode_cell({r, c:3})] = { t:'n', v: toSerial(ed), z:'dd.mm.yyyy' };
         }
       }
-
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, isExpanded ? 'Einzeltage' : 'Zeiträume');
 
-      const y = $('#year').value || 'YYYY';
-      const s = ($('#state option:checked')?.textContent || 'Bundesland').replace(/[\\/:*?"<>|]/g,'_');
-      const m = $('#mode').value || 'both';
-      const suffix = isExpanded ? '_tage' : '';
-      XLSX.writeFile(wb, `kalender_${m}_${s}_${y}${suffix}.xlsx`);
+      const y=$('#year').value||'YYYY', s1=($('#state option:checked')?.textContent||'Bundesland').replace(/[\\/:*?"<>|]/g,'_');
+      const s2 = ($('#state2').value && $('#compareToggle').checked) ? ($('#state2 option:checked')?.textContent||'').replace(/[\\/:*?"<>|]/g,'_') : '';
+      const m=$('#mode').value||'both', suffix=isExpanded?'_tage':'';
+      const name = s2 ? `kalender_${m}_${s1}_UND_${s2}_${y}${suffix}.xlsx` : `kalender_${m}_${s1}_${y}${suffix}.xlsx`;
+      XLSX.writeFile(wb, name);
     }
 
-    function expandToSingleDays(lastQuery){
-      if(!lastQuery || !lastQuery.items) return;
-      const days = [];
-      for(const it of lastQuery.items){
-        const start = parseLocalDate(it.start);
-        const end = parseLocalDate(it.end);
-        for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
-          days.push({ type: it.type, name: it.name, date: new Date(d) });
+    async function loadLogoDataUrl(){
+      const imgEl = document.getElementById('appLogo');
+      if(imgEl){
+        if(!imgEl.complete){ await new Promise(res=>{ imgEl.onload=res; imgEl.onerror=res; }); }
+        if(imgEl.naturalWidth && imgEl.naturalHeight){
+          try{
+            const c=document.createElement('canvas'); c.width=imgEl.naturalWidth; c.height=imgEl.naturalHeight;
+            c.getContext('2d').drawImage(imgEl,0,0);
+            return { dataUrl:c.toDataURL('image/png') };
+          }catch(e){ console.warn('Canvas/DataURL aus <img> nicht möglich:', e); }
         }
       }
-      days.sort((a,b)=>a.date - b.date);
+      try{
+        const resp=await fetch('logo_Ferien_Feiertage.png',{cache:'no-cache'});
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const blob=await resp.blob();
+        const dataUrl=await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
+        return { dataUrl };
+      }catch(e){
+        console.warn('Logo per fetch nicht geladen:', e);
+        setStatus('Logo fürs PDF nicht eingebettet (CORS/Dateipfad).', 'error');
+        return null;
+      }
+    }
 
-      const tbody = $('#results-body');
-      tbody.innerHTML = '';
-      for(const day of days){
+    function buildPdfRowsAndFlags(){
+      const rows=[], flags=[];
+      if(appState.expanded){
+        for(const it of appState.lastQuery.items){
+          const s=parseLocalDate(it.start), e=parseLocalDate(it.end);
+          for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
+            const dd = new Date(d);
+            const lbl = Array.isArray(it.states)&&it.states.length ? ` (${it.states.join(' & ')})` : (it.stateShort?` (${it.stateShort})`:``);
+            rows.push([ it.type, `${it.name}${lbl}`, dd.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}), '—', '1' ]);
+            flags.push(!!it._overlapDaySet && it._overlapDaySet.has(dd.toISOString().slice(0,10)));
+          }
+        }
+      } else {
+        for(const it of appState.lastQuery.items){
+          const lbl = Array.isArray(it.states)&&it.states.length ? ` (${it.states.join(' & ')})` : (it.stateShort?` (${it.stateShort})`:``);
+          rows.push([ it.type, `${it.name}${lbl}`, fmtDate(it.start), fmtDate(it.end), String(daysInclusive(it.start,it.end)) ]);
+          flags.push(!!it.overlap);
+        }
+      }
+      return { rows, flags };
+    }
+
+    async function exportTableToPdf(showOnly=true){
+      if(!(window.jspdf && window.jspdf.jsPDF)){ setStatus('jsPDF wurde nicht geladen.', 'error'); return; }
+      if(!appState.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:'p', unit:'pt', format:'a4' });
+
+      const y = $('#year').value || 'YYYY';
+      const s1Name = ($('#state option:checked')?.textContent||'Bundesland');
+      const s2Name = ($('#compareToggle').checked && $('#state2').value) ? ($('#state2 option:checked')?.textContent||'') : '';
+      const mode = $('#mode').value || 'both';
+      const label = {both:'Ferien & Feiertage', school:'Schulferien', public:'Feiertage'}[mode];
+      const slogan = `Die schönste Zeit im Jahr ${y}`;
+      const subline = s2Name ? `${label} – ${s1Name} & ${s2Name}` : `${label} – ${s1Name}`;
+
+      const logo = await loadLogoDataUrl();
+      const pageWidth = doc.internal.pageSize.getWidth(), pageHeight = doc.internal.pageSize.getHeight();
+      const pageMargin = 36, headerH = 108, targetLogoH=84, targetLogoW= targetLogoH * 1.6;
+
+      const drawHeader = () => {
+        doc.setFillColor(...COLORS.headerBg); doc.rect(0, 0, pageWidth, headerH, 'F');
+        if(logo){ doc.addImage(logo.dataUrl, undefined, pageMargin, 16, targetLogoW, targetLogoH); }
+        doc.setFontSize(18); doc.setTextColor(...COLORS.blue); doc.setFont(undefined,'bold');
+        doc.text(slogan, pageWidth - pageMargin, 44, { align:'right' });
+        doc.setFontSize(11); doc.setTextColor(60,70,95); doc.setFont(undefined,'normal');
+        doc.text(subline, pageWidth - pageMargin, 66, { align:'right' });
+        doc.setDrawColor(...COLORS.green); doc.setLineWidth(1); doc.line(pageMargin, headerH-16, pageWidth - pageMargin, headerH-16);
+      };
+      const drawFooter = (pageNum) => {
+        const yFooter = pageHeight - 18; doc.setFontSize(9); doc.setTextColor(80);
+        doc.text(`Seite ${pageNum}`, pageMargin, yFooter);
+        doc.text(`© ${new Date().getFullYear()} Wolfgang Saal – Ferien & Feiertage`, pageWidth - pageMargin, yFooter, { align:'right' });
+      };
+
+      if(typeof doc.autoTable !== 'function'){ setStatus('autoTable-Plugin nicht geladen.', 'error'); return; }
+
+      const { rows, flags } = buildPdfRowsAndFlags();
+      const head = [['Typ','Bezeichnung','Start','Ende','Tage']];
+      const startY = headerH + 2;
+
+      doc.autoTable({
+        head, body: rows,
+        startY,
+        theme: 'plain',
+        margin: { left: pageMargin, right: pageMargin, bottom: 50 },
+        styles: { fontSize: 10, cellPadding: 4, lineWidth: 0 },
+        headStyles: { fillColor: COLORS.headBlue, textColor: COLORS.headText, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: COLORS.zebra },
+        columnStyles: { 4: { halign: 'right' } },
+        didParseCell: (data) => {
+          if(data.section==='body'){
+            const idx = data.row.index;
+            if(flags[idx]){ data.cell.styles.fillColor = COLORS.overlap; }
+          }
+        },
+        didDrawPage: (data) => { drawHeader(); drawFooter(data.pageNumber); }
+      });
+
+      const s1Safe = s1Name.replace(/[\\/:*?"<>|]/g,'_');
+      const s2Safe = s2Name ? s2Name.replace(/[\\/:*?"<>|]/g,'_') : '';
+      const suffix = appState.expanded ? '_tage' : '';
+      const filename = s2Name ? `kalender_${mode}_${s1Safe}_UND_${s2Safe}_${y}${suffix}.pdf` : `kalender_${mode}_${s1Safe}_${y}${suffix}.pdf`;
+      if(showOnly){
+        const blob = doc.output('blob'); const url = URL.createObjectURL(blob);
+        const win = window.open(url,'_blank'); if(!win){ setStatus('Popup blockiert. Bitte Popups erlauben oder Datei speichern.','error'); }
+      } else { doc.save(filename); }
+    }
+
+    function expandToSingleDays(items){
+      const daysA = new Map(), daysB = new Map();
+      for(const it of items){
+        const s = parseLocalDate(it.start), e = parseLocalDate(it.end);
+        for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
+          const iso = d.toISOString().slice(0,10);
+          if(it.origin==='A'){ daysA.set(iso, true); }
+          else if(it.origin==='B'){ daysB.set(iso, true); }
+          else if(it.origin==='AB'){ daysA.set(iso, true); daysB.set(iso, true); }
+        }
+      }
+      const overlapDates = new Set([...daysA.keys()].filter(k=>daysB.has(k)));
+      for(const it of items){
+        const set = new Set();
+        const s = parseLocalDate(it.start), e=parseLocalDate(it.end);
+        for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
+          const iso = d.toISOString().slice(0,10);
+          if(overlapDates.has(iso)) set.add(iso);
+        }
+        it._overlapDaySet = set;
+      }
+
+      const tbody = $('#results-body'); tbody.innerHTML='';
+      const allDays = [];
+      for(const it of items){
+        const s = parseLocalDate(it.start), e = parseLocalDate(it.end);
+        for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
+          const iso = d.toISOString().slice(0,10);
+          allDays.push({
+            type: it.type, name: it.name, date: new Date(d),
+            states: it.states, stateShort: it.stateShort, overlap: overlapDates.has(iso)
+          });
+        }
+      }
+      allDays.sort((a,b)=> a.date - b.date || a.name.localeCompare(b.name));
+      for(const day of allDays){
+        const badgeClass = day.type==='Feiertag' ? 'type-badge t-feiertag' : 'type-badge t-ferien';
+        let stateBadges = '';
+        if(Array.isArray(day.states) && day.states.length){
+          stateBadges = day.states.map(s=>`<span class="pill state">${s}</span>`).join('');
+        } else if (day.stateShort){
+          stateBadges = `<span class="pill state">${day.stateShort}</span>`;
+        }
         const tr = document.createElement('tr');
-        const typeBadgeClass = day.type === 'Feiertag' ? 'type-badge t-feiertag' : 'type-badge t-ferien';
+        if(day.overlap) tr.classList.add('overlap');
         tr.innerHTML = `
-          <td><span class="${typeBadgeClass}">${day.type}</span></td>
-          <td>${day.name}</td>
+          <td><span class="${badgeClass}">${day.type}</span></td>
+          <td>${day.name} ${stateBadges}</td>
           <td>${day.date.toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' })}</td>
           <td>—</td>
-          <td>1</td>
+          <td style="text-align:right">1</td>
         `;
         tbody.appendChild(tr);
       }
+      updateActionButtons();
     }
 
-    // --- App State & Events ---
-    const state = { lastQuery: null, expanded: false };
+    function updateSubmitState(){ /* Suchen bleibt klickbar; Validierung im Submit */ }
 
     async function refreshYears(){
-      const st = $('#state').value; const mode = $('#mode').value;
-      if(!st){
-        $('#year').innerHTML = '';
-        updateSubmitState();
-        setStatus('Bitte Bundesland wählen.');
-        return;
-      }
+      const st1 = $('#state').value; const mode = $('#mode').value;
+      const compare = $('#compareToggle').checked; const st2 = $('#state2').value;
+      if(!st1){ $('#year').innerHTML=''; setStatus('Bitte Bundesland wählen.'); return; }
       setStatus('Ermittle verfügbare Jahre…');
       try{
-        const {min,max} = await getAvailableYearsFor(st, mode);
+        const r1 = await getAvailableYearsFor(st1, mode);
+        let min=r1.min, max=r1.max;
+        if(compare && st2){
+          const r2 = await getAvailableYearsFor(st2, mode);
+          if(r2){
+            min = Math.max(min, r2.min);
+            max = Math.min(max, r2.max);
+            if(min>max){
+              min = r1.min; max = r1.max;
+              setStatus('Hinweis: Keine gemeinsame Jahrspanne – Auswahl basiert auf Bundesland 1.');
+            }
+          }
+        }
         fillYearSelect(min, max);
         setStatus('Bereit.');
       }catch(e){
         console.error(e);
-        setStatus('Konnte verfügbare Jahre nicht ermitteln – Standardwerte verwendet.', 'error');
-        const now = new Date().getFullYear(); fillYearSelect(now-5, now+5);
+        setStatus('Konnte verfügbare Jahre nicht ermitteln – Standardwerte.', 'error');
+        const now=new Date().getFullYear(); fillYearSelect(now-5, now+5);
       }
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadStates();
-      fillStateSelect();
+      (function initSelects(){
+        const s1 = $('#state'), s2 = $('#state2');
+        s1.innerHTML = '<option value="">Bundesland wählen</option>' + STATES.map(s=>`<option value="${s.code}">${s.name}</option>`).join('');
+        s2.innerHTML = '<option value=""></option>' + STATES.map(s=>`<option value="${s.code}">${s.name}</option>`).join('');
+      })();
+
+      $('#state2').disabled = true;
+      syncState2Width();
       updateSubmitState();
+      updateActionButtons();
+      updateState1UI();
+      updateState2UI();
 
       $('#state').addEventListener('change', async ()=>{
-        updateSubmitState();
-        if($('#state').value){ await refreshYears(); } else { $('#year').innerHTML = ''; }
+        updateState1UI();
+        clearOutput('Ausgabe zurückgesetzt (Bundesland geändert).');
+        if($('#state').value){ await refreshYears(); } else { $('#year').innerHTML=''; }
+        syncState2Width();
       });
-
+      $('#year').addEventListener('change', ()=>{
+        clearOutput('Ausgabe zurückgesetzt (Jahr geändert).');
+      });
       $('#mode').addEventListener('change', async ()=>{
+        clearOutput('Ausgabe zurückgesetzt (Datenart geändert).');
+        if($('#state').value){ await refreshYears(); }
+      });
+      $('#compareToggle').addEventListener('change', async ()=>{
+        updateState2UI();
+        clearOutput('Ausgabe zurückgesetzt (Vergleich umgeschaltet).');
+        if($('#state').value){ await refreshYears(); }
+        syncState2Width();
+      });
+      $('#state2').addEventListener('change', async ()=>{
+        updateState2UI();
+        clearOutput('Ausgabe zurückgesetzt (Bundesland 2 geändert).');
         if($('#state').value){ await refreshYears(); }
       });
 
+      // --- SUCHE (mit verschärfter Validierung) ---
       $('#query-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const stateCode = $('#state').value;
-        if(!stateCode){ setStatus('Bitte zuerst ein Bundesland wählen.'); return; }
-        const year = $('#year').value;
-        const mode = $('#mode').value;
+
+        const year = $('#year').value, mode = $('#mode').value;
+
+        // 1) Bundesland 1 MUSS gewählt sein
+        const st1 = $('#state').value;
+        if(!st1){
+          updateState1UI({submitTriggered:true});
+          setStatus('Bitte ein Bundesland auswählen.', 'error');
+          return;
+        }
+
+        // 2) Wenn Vergleich aktiv, MUSS Bundesland 2 gewählt sein -> sonst ABBRUCH
+        const compareBoxOn = $('#compareToggle').checked;
+        const hasState2 = !!$('#state2').value;
+        updateState2UI({submitTriggered: compareBoxOn && !hasState2});
+        if(compareBoxOn && !hasState2){
+          setStatus('Bitte zweites Bundesland auswählen oder den Vergleich deaktivieren.', 'error');
+          return; // <--- HARTER ABBRUCH, keine Suche!
+        }
+
+        const compare = compareBoxOn && hasState2;
 
         setStatus('Lade Daten …');
-        $('#submit').disabled = true;
+        updateActionButtons();
 
         try{
-          const items = await fetchCombined(stateCode, year, mode);
-          state.lastQuery = { stateCode, year, items };
-          state.expanded = false;
-          renderRows(items);
+          const items1 = await fetchCombined(st1, year, mode);
+          const s1Short = shortOf(st1);
+          for(const it of items1){ it.stateShort=s1Short; it.origin='A'; }
+
+          let merged = items1, overlapCount=0;
+          if(compare){
+            const st2 = $('#state2').value;
+            if(st2 === st1){
+              setStatus('Hinweis: Beide Bundesländer identisch. Vergleich ignoriert.');
+            } else {
+              const items2 = await fetchCombined(st2, year, mode);
+              const s2Short = shortOf(st2);
+              for(const it of items2){ it.stateShort=s2Short; it.origin='B'; }
+              const res = splitMarkAndMerge(items1, items2, s1Short, s2Short);
+              merged = res.merged;
+              overlapCount = res.overlapCount;
+            }
+          }
+
+          appState.lastQuery = { year, items: merged };
+          appState.expanded = false;
+          renderRows(merged);
+
+          const s1Name = $('#state option:checked')?.textContent || '';
           const label = {both:'Ferien & Feiertage', school:'Schulferien', public:'Feiertage'}[mode];
-          setStatus(`Gefunden: ${items.length} Einträge (${label}) für ${$('#state option:checked').textContent} ${year}.`);
+          const extra = compare ? ` (Überlappungen: ${overlapCount})` : '';
+          setStatus(`Gefunden: ${merged.length} Einträge (${label}) für ${s1Name} ${year}.${extra}`);
         }catch(err){
           console.error(err);
-          setStatus('Fehler beim Laden der Daten. Bitte später erneut versuchen.', 'error');
-          const tbody = $('#results-body');
-          tbody.innerHTML = `<tr><td colspan=\"5\" class=\"muted\">Fehler beim Abruf der API.</td></tr>`;
+          clearOutput('Fehler beim Laden der Daten: ' + (err?.message || err));
+          $('#results-body').innerHTML = '<tr><td colspan="5" class="muted">Fehler beim Abruf der API.</td></tr>';
         }finally{
-          updateSubmitState();
+          updateActionButtons();
         }
       });
 
+      // Aktionen
       $('#exportXlsx').addEventListener('click', exportTableToXlsx);
-      $('#printTable').addEventListener('click', () => window.print());
-
+      $('#showPdf').addEventListener('click', async ()=>{ await exportTableToPdf(true); });
       $('#expandDays').addEventListener('click', () => {
-        if(!state.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
-        if(!state.expanded){
-          expandToSingleDays(state.lastQuery);
-          state.expanded = true;
+        if(!appState.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
+        if(!appState.expanded){
+          expandToSingleDays(appState.lastQuery.items);
+          appState.expanded = true;
           $('#expandDays').textContent = 'Zeiträume anzeigen';
-          setStatus('Einzeltage werden angezeigt.');
+          setStatus('Einzeltage werden angezeigt (Überlappungs-Tage hervorgehoben).');
         } else {
-          renderRows(state.lastQuery.items);
-          state.expanded = false;
+          renderRows(appState.lastQuery.items);
+          appState.expanded = false;
           $('#expandDays').textContent = 'Tage auflisten';
           setStatus('Zeiträume werden angezeigt.');
         }
+        updateActionButtons();
       });
     });
+
+    window._appState = ()=>appState;
   </script>
 </body>
 </html>

@@ -1,38 +1,43 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
-# Ferien & Feiertage DE
+# Ferien & Feiertage – Web-App
 
-Eine Web-App zur Anzeige und zum Export von Schulferien und Feiertagen für deutsche Bundesländer. Die Daten werden von der öffentlichen API [openholidaysapi.org](https://openholidaysapi.org) geladen – ein API-Schlüssel ist nicht erforderlich.
+**Ferien & Feiertage** ist eine moderne Web-App zur Anzeige und zum Export von Schulferien und Feiertagen für deutsche Bundesländer. Die Daten werden live von [openholidaysapi.org](https://www.openholidaysapi.org/de/) geladen – ein API-Key ist nicht erforderlich.
 
-## Features
+## Funktionen
 
-- Auswahl von Bundesland, Jahr und Datenart (Ferien, Feiertage oder beides)
-- Dynamische Ermittlung der verfügbaren Jahre je nach Bundesland und Datenart
-- Anzeige der Ergebnisse als Tabelle mit Typ, Bezeichnung, Start, Ende und Anzahl der Tage
-- Umschaltung zwischen Zeiträumen und einzelnen Tagen
-- Export der Tabelle als Excel-Datei (.xlsx) mit echten Datumswerten
-- Druckfunktion für die Ergebnistabelle
-- Moderne, responsive Oberfläche und optimierte Druckansicht
+- **Bundesland, Jahr und Datenart wählen:** Auswahl von Bundesland, Jahr und ob Ferien, Feiertage oder beides angezeigt werden sollen.
+- **Vergleich zweier Bundesländer:** Optional können die Ferien/Feiertage von zwei Bundesländern verglichen werden. Überlappungen werden hervorgehoben.
+- **Dynamische Jahr-Auswahl:** Die verfügbaren Jahre werden je nach Bundesland und Datenart automatisch ermittelt.
+- **Tabellarische Darstellung:** Übersichtliche Tabelle mit Typ, Bezeichnung, Start, Ende und Anzahl der Tage.
+- **Einzeltage auflisten:** Umschaltung zwischen Zeiträumen und einzelnen Tagen.
+- **Export:** Tabelle als Excel (.xlsx) oder PDF exportieren.
+- **Druckfunktion:** Optimierte Druckansicht.
+- **Responsive Design:** Funktioniert auf Desktop und Mobilgeräten.
 
 ## Nutzung
 
 1. Öffne die `index.html` im Browser.
 2. Wähle ein Bundesland und ein Jahr aus.
-3. Wähle die gewünschte Datenart.
-4. Klicke auf **Suchen**, um die Daten zu laden.
-5. Die Ergebnisse werden in einer Tabelle angezeigt.
-6. Über die Toolbar können die Daten als Excel exportiert, gedruckt oder als Einzeltage angezeigt werden.
+3. Optional: Aktiviere den Vergleich und wähle ein zweites Bundesland.
+4. Wähle die gewünschte Datenart.
+5. Klicke auf **Suchen**.
+6. Die Ergebnisse erscheinen in der Tabelle.
+7. Über die Toolbar können die Daten als Excel/PDF exportiert, gedruckt oder als Einzeltage angezeigt werden.
 
-## Quelle
+## Technische Details
 
-Die Daten stammen von [openholidaysapi.org](https://openholidaysapi.org). Es wird keine Gewähr für die Richtigkeit der Daten übernommen.
+- **Datenquelle:** [openholidaysapi.org](https://www.openholidaysapi.org/de/)
+- **Export:** [SheetJS](https://sheetjs.com/) für Excel, [jsPDF](https://github.com/parallax/jsPDF) für PDF
+- **Frontend:** Reines HTML, CSS und JavaScript, keine weiteren Abhängigkeiten
 
-## Lizenz
+## Lizenz & Autor
 
-MIT License – siehe [LICENSE](LICENSE).
+MIT License  
+© 2025 Wolfgang Saal, Böllenborn
+
+Download & Quellcode: [github.com/wsaal68/](https://github.com/wsaal68/)
 
 ---
 
-## Autor
-
-© 2025 Wolfgang Saal, Böllenborn
+**Hinweis:** Die Daten werden automatisiert von einer öffentlichen API geladen. Es wird keine Gewähr für
