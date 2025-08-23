@@ -7,11 +7,11 @@
   <style>
     :root{
       --bg:#0b1020; --card:#121935; --accent:#4b7bec; --accent-2:#39d98a; --text:#e6eaf6; --muted:#9aa4c5; --danger:#ff6b6b; --border:#263156;
-      --action-h: 46px; /* Einheitliche Höhe für Toolbar-Buttons */
+      --action-h: 46px;
       --overlap-bg: rgba(57,217,138,.12);
       --overlap-bg-hover: rgba(57,217,138,.18);
       --overlap-accent: #39d98a;
-      --state2-w: auto; /* wird per JS auf Breite von #state gesetzt */
+      --state2-w: auto;
     }
     *{box-sizing:border-box}
     body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(180deg,#0b1020,#0a1228 60%,#0b132e); color:var(--text);}    
@@ -26,12 +26,7 @@
     select, button{width:100%}
     select:focus, button:focus{outline:2px solid var(--accent); outline-offset:2px}
     button{background:linear-gradient(180deg,var(--accent),#275adf); border:0; font-weight:700; cursor:pointer}
-    /* Logo-Blau explizit für den Suchen-Button */
-    #submit{
-      background: var(--accent) !important;
-      border: 0;
-      height: var(--action-h);
-    }
+    #submit{ background: var(--accent) !important; border: 0; height: var(--action-h); }
     #submit:hover{ filter: brightness(1.08) saturate(1.05); }
     button[disabled]{opacity:.6; cursor:not-allowed}
     .muted{color:var(--muted)}
@@ -43,57 +38,22 @@
     .pill{display:inline-block; padding:.25rem .5rem; border-radius:999px; font-size:12px; background:rgba(75,123,236,.12); border:1px solid rgba(75,123,236,.4); color:#cfe0ff}
     .pill.state{margin-left:.35rem}
     .toolbar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin:12px 0}
-    /* Gleichbreite Aktionsbuttons: drei Spalten, gleiche Höhe */
-    .toolbar .right{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(160px, 1fr));
-      gap:10px;
-      align-items:stretch;
-    }
-    .toolbar .right button{
-      height: var(--action-h);
-      width: 100%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 14px;
-      white-space: nowrap;
-    }
-    @media (max-width:560px){
-      .toolbar .right{ grid-template-columns: 1fr; }
-    }
+    .toolbar .right{ display:grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap:10px; align-items:stretch; }
+    .toolbar .right button{ height: var(--action-h); width: 100%; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; white-space: nowrap; }
+    @media (max-width:560px){ .toolbar .right{ grid-template-columns: 1fr; } }
     .outline{background:transparent; border:1px solid var(--border)}
     .error{color:var(--danger)}
     .type-badge{display:inline-block; padding:.2rem .5rem; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.18)}
     .t-feiertag{background:rgba(249,115,22,.15)}
     .t-ferien{background:rgba(59,130,246,.15)}
-
-    /* Vergleichszeile 2. Bundesland */
     .compare{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:8px 0 4px}
     .compare .checkwrap{display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px dashed var(--border); border-radius:10px}
     .compare .state2-wrap{display:inline-block; width: var(--state2-w); max-width:100%}
     .compare select{width:100%}
-
-    /* Generische Optik für fehlende Auswahl (beide Felder nutzbar) */
-    .select-wrap.need-select select{
-      border-color: var(--accent-2) !important;
-      box-shadow: 0 0 0 1px var(--accent-2) inset;
-    }
-    .select-hint{
-      display:none;
-      margin-top:6px;
-      font-size:12px;
-      color: var(--accent-2);
-    }
-
-    /* Overlap-Hervorhebung in Tabelle */
-    tbody tr.overlap{
-      background: var(--overlap-bg);
-      box-shadow: inset 3px 0 0 0 var(--overlap-accent);
-    }
-    tbody tr.overlap:hover{
-      background: var(--overlap-bg-hover);
-    }
+    .select-wrap.need-select select{ border-color: var(--accent-2) !important; box-shadow: 0 0 0 1px var(--accent-2) inset; }
+    .select-hint{ display:none; margin-top:6px; font-size:12px; color: var(--accent-2); }
+    tbody tr.overlap{ background: var(--overlap-bg); box-shadow: inset 3px 0 0 0 var(--overlap-accent); }
+    tbody tr.overlap:hover{ background: var(--overlap-bg-hover); }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -132,14 +92,12 @@
         </div>
       </form>
 
-      <!-- Vergleichszeile für zweites Bundesland -->
       <div class="compare">
         <div class="checkwrap">
           <input type="checkbox" id="compareToggle" />
           <label for="compareToggle" style="margin:0; color:var(--muted);">zweites Bundesland vergleichen</label>
         </div>
         <div class="state2-wrap select-wrap" id="state2Wrap">
-          <!-- leere Option als sichtbarer leerer Zustand -->
           <select id="state2" disabled>
             <option value=""></option>
           </select>
@@ -279,7 +237,7 @@
       const pushCuts = (arr)=>{
         for(const it of arr){
           const a = dayNumISO(it.start);
-          const b = dayNumISO(it.end) + 1; // end-exklusiv
+          const b = dayNumISO(it.end) + 1;
           cuts.add(a); cuts.add(b);
         }
       };
@@ -289,9 +247,9 @@
     function segmentize(items, cuts){
       const segs = [];
       for(let i=0;i<cuts.length-1;i++){
-        const a = cuts[i], b = cuts[i+1]; // [a,b)
+        const a = cuts[i], b = cuts[i+1];
         const startIso = isoFromDayNum(a);
-        const endIso   = isoFromDayNum(b-1); // inklusiv
+        const endIso   = isoFromDayNum(b-1);
         for(const it of items){
           const s = dayNumISO(it.start), e = dayNumISO(it.end);
           if(s <= a && e >= (b-1)){
@@ -401,12 +359,65 @@
       yearsCache.set(key, range);
       return range;
     }
-    function fillYearSelect(min, max){
-      const sel = $('#year'); sel.innerHTML='';
-      for(let y=max; y>=min; y--){ sel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`); }
-      const nowY = new Date().getFullYear();
-      sel.value = String(Math.min(Math.max(nowY, min), max));
+
+    // Jahr-Auswahl beibehalten (bereits bekannter Patch)
+    function fillYearSelect(min, max, { preferred = null, includePreferredIfOutOfRange = false } = {}){
+      const sel = $('#year');
+      if(!sel) return;
+      const current = String(preferred ?? sel.value ?? '');
+      sel.innerHTML = '';
+      for(let y = max; y >= min; y--){
+        sel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`);
+      }
+      let setVal = '';
+      const curNum = Number(current);
+      if(current && !Number.isNaN(curNum) && curNum >= min && curNum <= max){
+        setVal = current;
+      } else if(current && includePreferredIfOutOfRange){
+        if(!Array.from(sel.options).some(o => o.value === current)){
+          const opt = document.createElement('option');
+          opt.value = current; opt.textContent = current;
+          sel.insertAdjacentElement('afterbegin', opt);
+        }
+        setVal = current;
+      } else {
+        const nowY = new Date().getFullYear();
+        setVal = String(Math.min(Math.max(nowY, min), max));
+      }
+      sel.value = setVal;
     }
+    async function refreshYears({ preserve = false } = {}){
+      const st1 = $('#state').value; 
+      const mode = $('#mode').value;
+      const compare = $('#compareToggle').checked; 
+      const st2 = $('#state2').value;
+      if(!st1){ $('#year').innerHTML=''; setStatus('Bitte Bundesland wählen.'); return; }
+      const prevYear = $('#year').value ? Number($('#year').value) : null;
+      setStatus('Ermittle verfügbare Jahre…');
+      try{
+        const r1 = await getAvailableYearsFor(st1, mode);
+        let min=r1.min, max=r1.max;
+        if(compare && st2){
+          const r2 = await getAvailableYearsFor(st2, mode);
+          if(r2){
+            min = Math.max(min, r2.min);
+            max = Math.min(max, r2.max);
+            if(min>max){
+              min = r1.min; max = r1.max;
+              setStatus('Hinweis: Keine gemeinsame Jahrspanne – Auswahl basiert auf Bundesland 1.');
+            }
+          }
+        }
+        fillYearSelect(min, max, { preferred: preserve ? prevYear : null, includePreferredIfOutOfRange: preserve });
+        setStatus('Bereit.');
+      }catch(e){
+        console.error(e);
+        setStatus('Konnte verfügbare Jahre nicht ermitteln – Standardwerte.', 'error');
+        const now=new Date().getFullYear(); 
+        fillYearSelect(now-5, now+5, { preferred: preserve ? prevYear : null, includePreferredIfOutOfRange: preserve });
+      }
+    }
+
     function clampToYear(it, year){
       const y=+year, start=parseLocalDate(it.start), end=parseLocalDate(it.end);
       const min=new Date(y,0,1), max=new Date(y,11,31);
@@ -548,6 +559,11 @@
       }
     }
 
+    // === PDF: zweizeilige Start/Ende-Zellen (Wochentag \n Datum(ohne Jahr)) ===
+    const pdfWeekday = (iso) => parseLocalDate(iso).toLocaleDateString('de-DE', { weekday: 'long' });
+    const pdfDayNoYear = (iso) => parseLocalDate(iso).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit' }); // dd.MM
+    const pdfTwoLine = (iso) => `${pdfWeekday(iso)}\n${pdfDayNoYear(iso)}`;
+
     function buildPdfRowsAndFlags(){
       const rows=[], flags=[];
       if(appState.expanded){
@@ -556,21 +572,27 @@
           for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
             const dd = new Date(d);
             const lbl = Array.isArray(it.states)&&it.states.length ? ` (${it.states.join(' & ')})` : (it.stateShort?` (${it.stateShort})`:``);
-            rows.push([ it.type, `${it.name}${lbl}`, dd.toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}), '—', '1' ]);
+            rows.push([
+              it.type,
+              `${it.name}${lbl}`,
+              `${dd.toLocaleDateString('de-DE',{ weekday:'long' })}\n${dd.toLocaleDateString('de-DE',{ day:'2-digit', month:'2-digit' })}`,
+              '—',
+              '1'
+            ]);
             flags.push(!!it._overlapDaySet && it._overlapDaySet.has(dd.toISOString().slice(0,10)));
           }
         }
       } else {
         for(const it of appState.lastQuery.items){
           const lbl = Array.isArray(it.states)&&it.states.length ? ` (${it.states.join(' & ')})` : (it.stateShort?` (${it.stateShort})`:``);
-          rows.push([ it.type, `${it.name}${lbl}`, fmtDate(it.start), fmtDate(it.end), String(daysInclusive(it.start,it.end)) ]);
+          rows.push([ it.type, `${it.name}${lbl}`, pdfTwoLine(it.start), pdfTwoLine(it.end), String(daysInclusive(it.start,it.end)) ]);
           flags.push(!!it.overlap);
         }
       }
       return { rows, flags };
     }
 
-    async function exportTableToPdf(showOnly=true){
+    async function exportTableToPdf(showOnly=true, targetWin=null){
       if(!(window.jspdf && window.jspdf.jsPDF)){ setStatus('jsPDF wurde nicht geladen.', 'error'); return; }
       if(!appState.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
 
@@ -608,34 +630,61 @@
 
       const { rows, flags } = buildPdfRowsAndFlags();
       const head = [['Typ','Bezeichnung','Start','Ende','Tage']];
-      const startY = headerH + 2;
 
       doc.autoTable({
         head, body: rows,
-        startY,
+        // Wichtig: kein startY, sondern Margin Top -> verhindert Überlappung ab Seite 2+
+        margin: { top: headerH + 14, left: pageMargin, right: pageMargin, bottom: 50 },
         theme: 'plain',
-        margin: { left: pageMargin, right: pageMargin, bottom: 50 },
-        styles: { fontSize: 10, cellPadding: 4, lineWidth: 0 },
+        styles: {
+          fontSize: 10,
+          cellPadding: { top: 2.5, right: 4, bottom: 2.5, left: 4 },
+          lineWidth: 0,
+          overflow: 'linebreak' // zweizeilig erlauben
+        },
         headStyles: { fillColor: COLORS.headBlue, textColor: COLORS.headText, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: COLORS.zebra },
-        columnStyles: { 4: { halign: 'right' } },
+        columnStyles: {
+          0: { cellWidth: 64 },   // Typ etwas schmaler
+          1: { overflow: 'ellipsize' }, // Name darf ellipsen, mehrzeilig wäre sonst zu hoch
+          2: { cellWidth: 84 },   // Start (2 Zeilen)
+          3: { cellWidth: 84 },   // Ende  (2 Zeilen)
+          4: { cellWidth: 40, halign: 'right' } // Tage rechtsbündig
+        },
         didParseCell: (data) => {
           if(data.section==='body'){
             const idx = data.row.index;
             if(flags[idx]){ data.cell.styles.fillColor = COLORS.overlap; }
           }
         },
-        didDrawPage: (data) => { drawHeader(); drawFooter(data.pageNumber); }
+        didDrawPage: (data) => {
+          drawHeader();
+          drawFooter(data.pageNumber);
+        }
       });
 
       const s1Safe = s1Name.replace(/[\\/:*?"<>|]/g,'_');
       const s2Safe = s2Name ? s2Name.replace(/[\\/:*?"<>|]/g,'_') : '';
       const suffix = appState.expanded ? '_tage' : '';
       const filename = s2Name ? `kalender_${mode}_${s1Safe}_UND_${s2Safe}_${y}${suffix}.pdf` : `kalender_${mode}_${s1Safe}_${y}${suffix}.pdf`;
+
       if(showOnly){
-        const blob = doc.output('blob'); const url = URL.createObjectURL(blob);
-        const win = window.open(url,'_blank'); if(!win){ setStatus('Popup blockiert. Bitte Popups erlauben oder Datei speichern.','error'); }
-      } else { doc.save(filename); }
+        const blobUrl = doc.output('bloburl');
+        if(targetWin && !targetWin.closed){
+          try{
+            targetWin.location.href = blobUrl;
+            setTimeout(()=>{ try{ URL.revokeObjectURL(blobUrl); }catch(_){} }, 60000);
+          }catch(_){
+            setStatus('Konnte PDF nicht im neuen Tab zeigen – speichere Datei.', 'error');
+            doc.save(filename);
+          }
+        } else {
+          const w = window.open(blobUrl,'_blank');
+          if(!w){ setStatus('Popup blockiert. Datei wird gespeichert.', 'error'); doc.save(filename); }
+        }
+      } else {
+        doc.save(filename);
+      }
     }
 
     function expandToSingleDays(items){
@@ -665,10 +714,10 @@
       for(const it of items){
         const s = parseLocalDate(it.start), e = parseLocalDate(it.end);
         for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
-          const iso = d.toISOString().slice(0,10);
           allDays.push({
             type: it.type, name: it.name, date: new Date(d),
-            states: it.states, stateShort: it.stateShort, overlap: overlapDates.has(iso)
+            states: it.states, stateShort: it.stateShort,
+            overlap: it._overlapDaySet?.has(d.toISOString().slice(0,10)) || false
           });
         }
       }
@@ -695,35 +744,7 @@
       updateActionButtons();
     }
 
-    function updateSubmitState(){ /* Suchen bleibt klickbar; Validierung im Submit */ }
-
-    async function refreshYears(){
-      const st1 = $('#state').value; const mode = $('#mode').value;
-      const compare = $('#compareToggle').checked; const st2 = $('#state2').value;
-      if(!st1){ $('#year').innerHTML=''; setStatus('Bitte Bundesland wählen.'); return; }
-      setStatus('Ermittle verfügbare Jahre…');
-      try{
-        const r1 = await getAvailableYearsFor(st1, mode);
-        let min=r1.min, max=r1.max;
-        if(compare && st2){
-          const r2 = await getAvailableYearsFor(st2, mode);
-          if(r2){
-            min = Math.max(min, r2.min);
-            max = Math.min(max, r2.max);
-            if(min>max){
-              min = r1.min; max = r1.max;
-              setStatus('Hinweis: Keine gemeinsame Jahrspanne – Auswahl basiert auf Bundesland 1.');
-            }
-          }
-        }
-        fillYearSelect(min, max);
-        setStatus('Bereit.');
-      }catch(e){
-        console.error(e);
-        setStatus('Konnte verfügbare Jahre nicht ermitteln – Standardwerte.', 'error');
-        const now=new Date().getFullYear(); fillYearSelect(now-5, now+5);
-      }
-    }
+    function updateSubmitState(){}
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadStates();
@@ -753,25 +774,26 @@
         clearOutput('Ausgabe zurückgesetzt (Datenart geändert).');
         if($('#state').value){ await refreshYears(); }
       });
+
+      // Jahr beibehalten bei Vergleich
       $('#compareToggle').addEventListener('change', async ()=>{
         updateState2UI();
         clearOutput('Ausgabe zurückgesetzt (Vergleich umgeschaltet).');
-        if($('#state').value){ await refreshYears(); }
+        if($('#state').value){ await refreshYears({ preserve: true }); }
         syncState2Width();
       });
       $('#state2').addEventListener('change', async ()=>{
         updateState2UI();
         clearOutput('Ausgabe zurückgesetzt (Bundesland 2 geändert).');
-        if($('#state').value){ await refreshYears(); }
+        if($('#state').value){ await refreshYears({ preserve: true }); }
       });
 
-      // --- SUCHE (mit verschärfter Validierung) ---
+      // Suche
       $('#query-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const year = $('#year').value, mode = $('#mode').value;
 
-        // 1) Bundesland 1 MUSS gewählt sein
         const st1 = $('#state').value;
         if(!st1){
           updateState1UI({submitTriggered:true});
@@ -779,13 +801,12 @@
           return;
         }
 
-        // 2) Wenn Vergleich aktiv, MUSS Bundesland 2 gewählt sein -> sonst ABBRUCH
         const compareBoxOn = $('#compareToggle').checked;
         const hasState2 = !!$('#state2').value;
         updateState2UI({submitTriggered: compareBoxOn && !hasState2});
         if(compareBoxOn && !hasState2){
           setStatus('Bitte zweites Bundesland auswählen oder den Vergleich deaktivieren.', 'error');
-          return; // <--- HARTER ABBRUCH, keine Suche!
+          return;
         }
 
         const compare = compareBoxOn && hasState2;
@@ -832,7 +853,22 @@
 
       // Aktionen
       $('#exportXlsx').addEventListener('click', exportTableToXlsx);
-      $('#showPdf').addEventListener('click', async ()=>{ await exportTableToPdf(true); });
+
+      // iPad/Safari: Fenster synchron öffnen, dann PDF laden
+      $('#showPdf').addEventListener('click', async ()=>{
+        if(!appState.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
+        const win = window.open('', '_blank');
+        if(!win){
+          setStatus('Popup blockiert. Datei wird gespeichert.', 'error');
+          await exportTableToPdf(false);
+          return;
+        }
+        try{
+          win.document.write('<!doctype html><title>PDF wird erzeugt…</title><body style="font-family:-apple-system,system-ui,Segoe UI,Roboto;padding:24px">PDF wird erzeugt…</body>');
+        }catch(_){}
+        await exportTableToPdf(true, win);
+      });
+
       $('#expandDays').addEventListener('click', () => {
         if(!appState.lastQuery){ setStatus('Bitte zuerst suchen.'); return; }
         if(!appState.expanded){
